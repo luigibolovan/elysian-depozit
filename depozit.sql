@@ -191,6 +191,8 @@ INSERT ALL
     INTO Orders values (2008, 105, to_date('2019-05-13', 'yyyy-mm-dd'))
 SELECT 1 FROM DUAL;
 
+
+
 INSERT INTO ORDERS values (2009, 106, to_date('2019-05-28', 'yyyy-mm-dd'));
 INSERT INTO ORDERS values (2010, 106, to_date('2019-07-23', 'yyyy-mm-dd'));
 INSERT INTO Orders values (2011, 102, to_date('2019-08-01', 'yyyy-mm-dd'));
@@ -199,6 +201,8 @@ INSERT INTO Orders values (2013, 102, to_date('2019-08-16', 'yyyy-mm-dd'));
 INSERT INTO Orders values (2014, 102, to_date('2019-10-16', 'yyyy-mm-dd'));
 
 INSERT INTO Orders_Products values(2000, 5, 300);
+
+INSERT INTO Orders values (2015, 106, to_date('2019-10-13', 'yyyy-mm-dd'));
 
 INSERT ALL
     INTO Orders_Products values (2001, 1, 400)
@@ -235,29 +239,32 @@ INSERT ALL
     INTO Orders_products values (2014, 19, 1000)
 SELECT 1 FROM DUAL;
 
+INSERT INTO Orders_Products values (2015, 1, 310);
 
-SELECT COUNT(*) FROM Orders
-WHERE Client_ID IN (SELECT Client_ID FROM Clients WHERE Client_Name = 'SIEPCOFAR - Farmacia Dona') AND EXTRACT(MONTH FROM Order_Date) = 8;
+/*** Cate comenzi a plasat Farmacia Dona in August, Suma totala, Valoarea medie per comanda ***/
+SELECT COUNT(*), SUM(SUM_Q), AVG(SUM_Q) FROM(
+    SELECT SUM(Orders_Products.Quantity) AS SUM_Q, AVG(Orders_Products.Quantity) AS AVERAGE_Q FROM Orders_Products
+    INNER JOIN Orders ON Orders.Order_ID = Orders_Products.Order_ID AND EXTRACT(MONTH FROM Order_Date) = 8 AND Client_ID = (SELECT Client_ID FROM Clients WHERE Clients.Client_Name = 'SIEPCOFAR - Farmacia Dona')
+    GROUP BY Orders.Order_ID, Orders.Order_Date
+);
 
-
-SELECT * FROM Orders
-WHERE Client_ID IN (SELECT Client_ID FROM Clients WHERE Client_Name = 'Farmacia Vlad') AND EXTRACT(YEAR FROM Order_date) = 2019
-AND Order_ID IN 
-    (SELECT Order_ID FROM Orders_Products WHERE Product_ID IN 
-        (SELECT Product_ID FROM Products_Categories WHERE Category_ID IN
-            (SELECT Category_ID FROM Categories WHERE Category_Name = 'Antibiotice')));
+/*** Cate comenzi de antibiotice a plasat farmacia Vlad in 2019 ***/
+SELECT COUNT(*) FROM Orders WHERE Client_ID IN 
+    (SELECT Client_ID FROM Clients WHERE Client_Name = 'Farmacia Vlad') AND EXTRACT(YEAR FROM Order_date) = 2019 AND Order_ID IN 
+        (SELECT Order_ID FROM Orders_Products WHERE Product_ID IN 
+            (SELECT Product_ID FROM Products_Categories WHERE Category_ID IN
+                (SELECT Category_ID FROM Categories WHERE Category_Name = 'Antibiotice')
+            )
+        );
     
-          
-SELECT COUNT(*) FROM Orders_Products
-WHERE Order_ID IN (SELECT Order_ID FROM Orders WHERE Client_ID IN (SELECT Client_ID FROM Clients WHERE Client_Name = 'Farmacia Vlad'))
-AND Order_ID IN (SELECT ORDER_ID FROM Orders WHERE EXTRACT(YEAR FROM Order_Date) = 2019)
-AND Product_ID IN (SELECT Product_ID FROM Products_Categories WHERE Category_ID IN (SELECT Category_ID FROM Categories WHERE Category_Name = 'Antibiotice'));
 
-SELECT Client_ID FROM
-    (SELECT Orders.Client_ID, Orders.Order_Date, SUM(Orders_Products.Quantity) ordered_Amount FROM Orders
-    INNER JOIN Orders_Products ON Orders.Order_ID = Orders_Products.Order_ID AND EXTRACT(YEAR FROM Orders.Order_Date) = 2019
-    GROUP BY Orders.Client_ID, Orders.Order_Date, Orders_Products.Quantity) grp
-    
-    WHERE grp.ordered_Amount = (SELECT MAX(Orders_Products.Quantity) from Orders_products);
+/*** Care e farmacia care a comandat cel mai mult in 2019 ***/
+SELECT Client_Name AS FARM_NR_MAX_COMENZI_2019 FROM Clients WHERE Clients.Client_ID IN( 
+    SELECT Client_ID FROM(
+        SELECT SUM(Orders_Products.Quantity) AS QUANTITY_SUM, Orders_Products.Order_ID, Orders.Client_ID, Orders.Order_Date FROM Orders_Products
+        JOIN Orders ON Orders_Products.Order_ID = Orders.Order_ID AND EXTRACT(YEAR FROM Orders.Order_date) = 2019
+        GROUP BY Orders_Products.Order_ID, Orders.Order_Date, Orders.Client_ID
+        ORDER BY QUANTITY_SUM DESC)
+    WHERE ROWNUM = 1
+);
 
-    
