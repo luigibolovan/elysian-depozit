@@ -1,19 +1,19 @@
 CREATE TABLE Clients
 (
 Client_ID int PRIMARY KEY,
-Client_Name varchar(255)
+Client_Name varchar2(255)
 );
 
 CREATE TABLE Categories
 (
 Category_ID int PRIMARY KEY,
-Category_Name varchar(63)
+Category_Name varchar2(63)
 );
 
 CREATE TABLE Products
 (
 Product_ID int PRIMARY KEY,
-Product_Name varchar(127),
+Product_Name varchar2(127),
 Price int
 );
 
@@ -96,7 +96,6 @@ INSERT ALL
     INTO Products values (36, 'Acetazolamida', 12)
     INTO Products values (37, 'Allergodil', 20)
 SELECT 1 FROM DUAL;
-
 INSERT INTO Products values (38, 'Amoxicilina', 13);
 INSERT INTO Products values (39, 'Ampicilina', 13);
 
@@ -144,38 +143,16 @@ INSERT ALL
     INTO Products_Categories values (36, 15)
     INTO Products_Categories values (37, 15)
 SELECT 1 FROM DUAL;
-
 INSERT INTO Products_Categories values (38, 16);
 INSERT INTO Products_Categories values (39, 16);
 
 INSERT ALL
-    INTO Clients values (1, 'Fildas Trading - Catena')
-    INTO Clients values (2, 'SIEPCOFAR - Farmacia Dona')
-    INTO Clients values (3, 'Farmexim - Help Net')
-    INTO Clients values (4, 'Sensiblu')
-    INTO Clients values (5, 'Ropharma Brasov')
+    INTO Clients values (101, 'Fildas Trading - Catena')
+    INTO Clients values (102, 'SIEPCOFAR - Farmacia Dona')
+    INTO Clients values (103, 'Farmexim - Help Net')
+    INTO Clients values (104, 'Sensiblu')
+    INTO Clients values (105, 'Ropharma Brasov')
 SELECT 1 FROM DUAL;
-
-UPDATE Clients
-SET Client_ID = 101 
-WHERE Client_ID = 1;
-
-UPDATE Clients
-SET Client_ID = 102
-WHERE Client_ID = 2;
-
-UPDATE Clients
-SET Client_ID = 103
-WHERE Client_ID = 3;
-
-UPDATE Clients
-SET Client_ID = 104 
-WHERE Client_ID = 4;
-
-UPDATE Clients
-SET Client_ID = 105 
-WHERE Client_ID = 5;
-
 INSERT INTO Clients values (106, 'Farmacia Vlad');
 
 INSERT INTO Orders values(2000, 101, to_Date('2018-05-13', 'yyyy-mm-dd'));
@@ -241,6 +218,7 @@ SELECT 1 FROM DUAL;
 
 INSERT INTO Orders_Products values (2015, 1, 310);
 
+
 /*** Cate comenzi a plasat Farmacia Dona in August, Suma totala, Valoarea medie per comanda ***/
 SELECT COUNT(*), SUM(SUM_Q), AVG(SUM_Q) FROM(
     SELECT SUM(Orders_Products.Quantity) AS SUM_Q, AVG(Orders_Products.Quantity) AS AVERAGE_Q FROM Orders_Products
@@ -267,4 +245,25 @@ SELECT Client_Name AS FARM_NR_MAX_COMENZI_2019 FROM Clients WHERE Clients.Client
         ORDER BY QUANTITY_SUM DESC)
     WHERE ROWNUM = 1
 );
+
+/**Printeaza urmatorul raport : Pentru fiecare produs cat s-a comandat de fiecare client**/
+SET SERVEROUTPUT ON;
+
+declare 
+cursor product_cursor 
+is 
+    SELECT SUM(Orders_Products.Quantity) AS PRODUCT_QUANTITY, Clients.Client_Name AS CLIENT_NAMES, Orders.Client_ID, Products.Product_Name AS PRODUCT_NAMES, Orders_Products.Product_ID FROM Orders_Products
+    INNER JOIN Orders ON Orders_Products.Order_ID = Orders.Order_ID
+    INNER JOIN Clients ON Orders.Client_ID = Clients.Client_ID
+    INNER JOIN Products ON Orders_Products.Product_ID = Products.Product_ID
+    GROUP BY Clients.Client_Name, Orders.Client_ID, Products.Product_Name, Orders_Products.Product_ID;
+rowProd product_cursor%rowtype;
+
+begin
+    for rowProd in product_cursor loop
+        dbms_output.put_line(rowProd.PRODUCT_NAMES||': '||rowProd.PRODUCT_QUANTITY||' ----- '||rowProd.CLIENT_NAMES);
+    end loop;
+end;
+
+
 
