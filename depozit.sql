@@ -38,6 +38,8 @@ Product_ID int REFERENCES Products(Product_ID),
 Quantity int
 );
 
+INSERT INTO Categories values (1, 'Preparate stomatologice');
+
 INSERT ALL
     INTO Categories values (2, 'Antidiabetice')
     INTO Categories values (3, 'Vitamine')
